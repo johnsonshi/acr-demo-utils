@@ -9,10 +9,10 @@ fi
 ACR_REGISTRY_NAME=$1
 
 # Login to Azure Container Registry
-echo "Logging into ACR $ACR_REGISTRY_NAME..."
+echo "[*] Logging into ACR $ACR_REGISTRY_NAME..."
 az acr login --name "$ACR_REGISTRY_NAME"
 if [ $? -ne 0 ]; then
-    echo "Failed to log in to ACR $ACR_REGISTRY_NAME. Please check the registry name and your permissions."
+    echo "[!] Failed to log in to ACR $ACR_REGISTRY_NAME. Please check the registry name and your permissions."
     exit 1
 fi
 
@@ -63,23 +63,21 @@ for SUBFOLDER in "${SUBFOLDERS[@]}"; do
         # Check if the tag already exists
         EXISTING_DIGEST=$(az acr repository show-manifests --name "$ACR_REGISTRY_NAME" --repository "$REPO_NAME" --query "[?tags[0]=='$TAG'].digest" --output tsv)
         if [ ! -z "$EXISTING_DIGEST" ]; then
-            echo "Tag $TAG already exists with digest $EXISTING_DIGEST"
+            echo "[*] Tag $TAG already exists with digest $EXISTING_DIGEST"
             image_digests["$FULL_IMAGE_NAME,existing"]=$EXISTING_DIGEST
         else
-            echo "Tag $TAG is new and does not exist yet."
+            echo "[*] Tag $TAG is new and does not exist yet."
         fi
 
         # Navigate to subfolder for build context
         pushd "$FOLDER_NAME/$SUBFOLDER" > /dev/null
         docker build -t "$FULL_IMAGE_NAME" -f "$DOCKERFILE_PATH" .
         if [ $? -ne 0 ]; then
-            echo "Docker build failed for $FULL_IMAGE_NAME. Terminating script."
-            exit 1
+            echo "[!] Docker build failed for $FULL_IMAGE_NAME."
         fi
         docker push "$FULL_IMAGE_NAME"
         if [ $? -ne 0 ]; then
-            echo "Docker push failed for $FULL_IMAGE_NAME. Terminating script."
-            exit 1
+            echo "[!] Docker push failed for $FULL_IMAGE_NAME."
         fi
         popd > /dev/null # Return to previous directory
 
@@ -101,10 +99,10 @@ for SUBFOLDER in "${SUBFOLDERS[@]}"; do
     done
 done
 
-echo "All Docker images have been built and pushed."
+echo "[*] Docker images have been built and pushed to $ACR_REGISTRY_NAME."
 
 echo ""
-echo "Image digests and end-of-life artifacts have been recorded in image_digests_table.txt"
+echo "[*] Image digests and end-of-life artifacts have been recorded in image_digests_table.txt"
 echo ""
 
 echo ""
@@ -112,9 +110,9 @@ cat image_digests_table.txt
 echo ""
 
 echo ""
-echo "Run \"oras discover -o tree --artifact-type 'application/vnd.microsoft.artifact.lifecycle' $ACR_REGISTRY_NAME.azurecr.io/<repo-name>@<existing-digest>\" to view the Lifecycle Metadata digest for an existing image digest."
+echo "[*] Run \"oras discover -o tree --artifact-type 'application/vnd.microsoft.artifact.lifecycle' $ACR_REGISTRY_NAME.azurecr.io/<repo-name>@<existing-digest>\" to view the Lifecycle Metadata digest for an existing image digest."
 echo ""
 
 echo ""
-echo "Run \"oras manifest fetch $ACR_REGISTRY_NAME.azurecr.io/<repo-name>@<lifecycle-metadata-digest>\" to view the Lifecycle Metadata JSON (including EOL date) for an existing image digest."
+echo "[*] Run \"oras manifest fetch $ACR_REGISTRY_NAME.azurecr.io/<repo-name>@<lifecycle-metadata-digest>\" to view the Lifecycle Metadata JSON (including EOL date) for an existing image digest."
 echo ""

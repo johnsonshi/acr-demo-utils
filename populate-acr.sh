@@ -9,10 +9,10 @@ fi
 ACR_REGISTRY_NAME=$1
 
 # Login to Azure Container Registry
-echo "Logging into ACR $ACR_REGISTRY_NAME..."
+echo "[*] Logging into ACR $ACR_REGISTRY_NAME..."
 az acr login --name "$ACR_REGISTRY_NAME"
 if [ $? -ne 0 ]; then
-    echo "Failed to log in to ACR $ACR_REGISTRY_NAME. Please check the registry name and your permissions."
+    echo "[!] Failed to log in to ACR $ACR_REGISTRY_NAME. Please check the registry name and your permissions."
     exit 1
 fi
 
@@ -56,16 +56,14 @@ for SUBFOLDER in "${SUBFOLDERS[@]}"; do
         pushd "$FOLDER_NAME/$SUBFOLDER" > /dev/null
         docker build -t "$FULL_IMAGE_NAME" -f "$DOCKERFILE_PATH" .
         if [ $? -ne 0 ]; then
-            echo "Docker build failed for $FULL_IMAGE_NAME. Terminating script."
-            exit 1
+            echo "[!] Docker build failed for $FULL_IMAGE_NAME."
         fi
         docker push "$FULL_IMAGE_NAME"
         if [ $? -ne 0 ]; then
-            echo "Docker push failed for $FULL_IMAGE_NAME. Terminating script."
-            exit 1
+            echo "[!] Docker push failed for $FULL_IMAGE_NAME."
         fi
         popd > /dev/null # Return to previous directory
     done
 done
 
-echo "All Docker images have been built and pushed."
+echo "[*] Docker images have been built and pushed to $ACR_REGISTRY_NAME."
