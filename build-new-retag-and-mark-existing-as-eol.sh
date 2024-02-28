@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -uo pipefail
+
 # Check if the ACR registry name is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <acr-registry-name>"
@@ -21,7 +23,6 @@ ISO8601_DATE=$(date +"%Y-%m-%dT%H:%M:%SZ") # End-of-life date for artifacts
 BASE_DIR=~/test-Dockerfiles
 FOLDER_NAME="$BASE_DIR/Dockerfile-$CURRENT_DATETIME"
 SUBFOLDERS=("fruit-apple" "fruit-banana" "fruit-orange" "meat-chicken" "meat-lamb")
-SUBFOLDERS=("fruit-apple")
 
 
 # Ensure base directory exists

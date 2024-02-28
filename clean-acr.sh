@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -uo pipefail
+
 # Check if the ACR registry name is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <acr-registry-name>"
@@ -25,24 +27,7 @@ fi
 
 # Loop through all repositories
 for repo in $repositories; do
-    echo "[*] Processing repository: $repo"
+    echo "[*] Deleting repository: $repo"
 
-    # List all digests in the repository
-    digests=$(az acr repository show-manifests --name $ACR_REGISTRY_NAME --repository $repo --query "[].digest" -o tsv)
-    if [ $? -ne 0 ]; then
-        echo "[!] Failed to list digests in repository $repo."
-    fi
-
-    # Loop through all digests and delete them
-    for digest in $digests; do
-        echo "Deleting digest $digest from repository $repo..."
-        az acr repository delete --name $ACR_REGISTRY_NAME --image $repo@$digest --yes
-        if [ $? -ne 0 ]; then
-            echo "[!] Failed to delete digest $digest from repository $repo."
-        else
-            echo "[*] Successfully deleted digest $digest from repository $repo"
-        fi
-    done
+    az acr repository delete --name $ACR_REGISTRY_NAME --repository $repo --yes
 done
-
-echo "[*] Completed deleting all digests in each repository within the ACR: $ACR_REGISTRY_NAME"

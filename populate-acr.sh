@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -uo pipefail
+
 # Check if the ACR registry name is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <acr-registry-name>"
@@ -34,7 +36,7 @@ unique_dockerfile_counter=1
 for SUBFOLDER in "${SUBFOLDERS[@]}"; do
     mkdir "$FOLDER_NAME/$SUBFOLDER"
     for N in {1..5}; do
-        unique_string_within_each_dockerfile="${CURRENT_DATETIME}-${counter}"
+        unique_string_within_each_dockerfile="${CURRENT_DATETIME}-${unique_dockerfile_counter}"
         # NOTE: DOCKERFILE_NAME should match the format as DOCKERFILE_PATH defined later.
         DOCKERFILE_NAME="$FOLDER_NAME/$SUBFOLDER/$SUBFOLDER-$N.Dockerfile"
         echo "FROM mcr.microsoft.com/cbl-mariner/base/python:3" > "$DOCKERFILE_NAME"
