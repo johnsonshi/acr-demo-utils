@@ -49,9 +49,11 @@ for SUBFOLDER in "${SUBFOLDERS[@]}"; do
     done
 done
 
-# Table header
-echo "| Full Image Reference with Repo and Tag | Tag | Existing Digest | New Digest |" > image_digests_table.txt
-echo "|----------------------------------------|-----|-----------------|------------|" >> image_digests_table.txt
+IMAGE_DIGESTS_TABLE_FILE="$FOLDER_NAME/image_digests_table.txt"
+
+# Table header for output image digests table file
+echo "| Full Image Reference with Repo and Tag | Tag | Existing Digest | New Digest |" > "$IMAGE_DIGESTS_TABLE_FILE"
+echo "|----------------------------------------|-----|-----------------|------------|" >> "$IMAGE_DIGESTS_TABLE_FILE"
 
 # Build and push Docker images
 for SUBFOLDER in "${SUBFOLDERS[@]}"; do
@@ -62,7 +64,7 @@ for SUBFOLDER in "${SUBFOLDERS[@]}"; do
         FULL_IMAGE_NAME="$ACR_REGISTRY_NAME.azurecr.io/$REPO_NAME:$TAG"
 
         # Check if the tag already exists
-        EXISTING_DIGEST=$(az acr repository show-manifests --name "$ACR_REGISTRY_NAME" --repository "$REPO_NAME" --query "[?tags[0]=='$TAG'].digest" --output tsv)
+        EXISTING_DIGEST=$(az acr manifest list-metadata --registry "$ACR_REGISTRY_NAME" --name "$REPO_NAME" --query "[?tags[0]=='$TAG'].digest" --output tsv)
         if [ ! -z "$EXISTING_DIGEST" ]; then
             echo "[*] Tag $TAG already exists with digest $EXISTING_DIGEST"
             image_digests["$FULL_IMAGE_NAME,existing"]=$EXISTING_DIGEST
@@ -83,7 +85,7 @@ for SUBFOLDER in "${SUBFOLDERS[@]}"; do
         popd > /dev/null # Return to previous directory
 
         # Get new digest
-        NEW_DIGEST=$(az acr repository show-manifests --name "$ACR_REGISTRY_NAME" --repository "$REPO_NAME" --query "[?tags[0]=='$TAG'].digest" --output tsv)
+        NEW_DIGEST=$(az acr manifest list-metadata --registry "$ACR_REGISTRY_NAME" --name "$REPO_NAME" --query "[?tags[0]=='$TAG'].digest" --output tsv)
         image_digests["$FULL_IMAGE_NAME,new"]=$NEW_DIGEST
 
         # If tag already existed, attach artifact with end-of-life date
@@ -93,9 +95,9 @@ for SUBFOLDER in "${SUBFOLDERS[@]}"; do
 
         # Append to table
         if [ ! -z "$EXISTING_DIGEST" ]; then
-            echo "| $FULL_IMAGE_NAME | $TAG | ${image_digests["$FULL_IMAGE_NAME,existing"]} | $NEW_DIGEST |" >> image_digests_table.txt
+            echo "| $FULL_IMAGE_NAME | $TAG | ${image_digests["$FULL_IMAGE_NAME,existing"]} | $NEW_DIGEST |" >> "$IMAGE_DIGESTS_TABLE_FILE"
         else
-            echo "| $FULL_IMAGE_NAME | $TAG | <no-existing-digest> | $NEW_DIGEST |" >> image_digests_table.txt
+            echo "| $FULL_IMAGE_NAME | $TAG | <no-existing-digest-for-tag> | $NEW_DIGEST |" >> "$IMAGE_DIGESTS_TABLE_FILE"
         fi
     done
 done
@@ -103,11 +105,11 @@ done
 echo "[*] Docker images have been built and pushed to $ACR_REGISTRY_NAME."
 
 echo ""
-echo "[*] Image digests and end-of-life artifacts have been recorded in image_digests_table.txt"
+echo "[*] Image digests and end-of-life artifacts have been recorded in $IMAGE_DIGESTS_TABLE_FILE"
 echo ""
 
 echo ""
-cat image_digests_table.txt
+cat "$IMAGE_DIGESTS_TABLE_FILE"
 echo ""
 
 echo ""
